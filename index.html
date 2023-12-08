@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paint</title>
+    <style>
+        body {
+            align-items: center;
+            text-align: center;
+        }
+
+        #paleta {
+            width: 100%;
+            background-color: #eee;
+        } 
+
+        #lienzo {
+            width: 100%;
+            height: 100%;
+            max-width: 500px; 
+            margin: 0 auto; 
+        }
+
+        canvas {
+            border: 1px solid #000;
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 1px solid;
+        }
+
+        .colorBtn.selected {
+            border: 2px solid #000;
+        }
+
+        .toolBtn.active {
+            background-color: green;
+        }
+
+        #guardarBtn, #borrarTodoBtn {
+            padding: 5px 10px;
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="paleta">
+        <h2>Paleta</h2>
+        <button id="dibujarCirculoBtn" class="toolBtn">Dibujar Círculo</button>
+        <button id="dibujarCuadradoBtn" class="toolBtn">Dibujar Cuadrado</button>
+        <button id="dibujarTrianguloBtn" class="toolBtn">Dibujar Triángulo</button>
+        <button id="pincelBtn" class="toolBtn">Pincel</button>
+        <h4>Colores</h4>
+        <button class="colorBtn" data-color="red">Rojo</button>
+        <button class="colorBtn" data-color="blue">Azul</button>
+        <button class="colorBtn" data-color="green">Verde</button>
+        <button class="colorBtn" data-color="yellow">Amarillo</button>
+        <button class="colorBtn" data-color="purple">Morado</button>
+        <button class="colorBtn" data-color="orange">Naranja</button>
+        <button class="colorBtn" data-color="pink">Rosa</button>
+        <h4>Herramientas</h4>
+        <button id="borrarTodoBtn">Borrar Todo</button>
+    </div>
+    <div id="lienzo">
+        <canvas id="canvas" width="500" height="500"></canvas>
+        <button id="guardarBtn">Guardar Imagen</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var canvas = document.getElementById('canvas');
+            var ctx = canvas.getContext('2d');
+            var figuraSeleccionada = 'círculo';
+            var colorSeleccionado = 'blue';
+            var pincelActivo = false;
+            var dibujandoFigura = false;
+            var lastX, lastY;
+
+            function ajustarCanvas() {
+                var canvasContainer = document.getElementById('lienzo');
+                var canvas = document.getElementById('canvas');
+                canvas.width = canvasContainer.clientWidth;
+                canvas.height = canvasContainer.clientHeight;
+            }
+
+            document.addEventListener('DOMContentLoaded', ajustarCanvas);
+            window.addEventListener('resize', ajustarCanvas);
+
+            function dibujarFiguraEnCoordenadas(event) {
+                var rect = canvas.getBoundingClientRect();
+                var x = event.clientX - rect.left;
+                var y = event.clientY - rect.top;
+                var lado = 50;
+
+                ctx.beginPath();
+
+                if (figuraSeleccionada === 'círculo') {
+                    ctx.arc(x, y, lado / 2, 0, 2 * Math.PI, false);
+                    ctx.fillStyle = colorSeleccionado;
+                    ctx.fill();
+                } else if (figuraSeleccionada === 'cuadrado') {
+                    ctx.rect(x - lado / 2, y - lado / 2, lado, lado);
+                    ctx.fillStyle = colorSeleccionado;
+                    ctx.fill();
+                } else if (figuraSeleccionada === 'triángulo') {
+                    ctx.moveTo(x, y - lado / 2);
+                    ctx.lineTo(x - lado / 2, y + lado / 2);
+                    ctx.lineTo(x + lado / 2, y + lado / 2);
+                    ctx.closePath();
+                    ctx.fillStyle = colorSeleccionado;
+                    ctx.fill();
+                }
+
+                ctx.closePath();
+            }
+
+            function dibujarPincel(event) {
+                if (!pincelActivo || dibujandoFigura) return;
+                var rect = canvas.getBoundingClientRect();
+                var x = event.clientX - rect.left;
+                var y = event.clientY - rect.top;
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = colorSeleccionado;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.closePath();
+
+                lastX = x;
+                lastY = y;
+            }
+
+            var toolBtns = document.querySelectorAll('.toolBtn');
+            var colorBtns = document.querySelectorAll('.colorBtn');
+            var btnGuardar = document.getElementById('guardarBtn');
+            var btnBorrarTodo = document.getElementById('borrarTodoBtn');
+
+            toolBtns.forEach(function (toolBtn) {
+                toolBtn.addEventListener('click', function () {
+                    toolBtns.forEach(function (btn) {
+                        btn.classList.remove('active');
+                    });
+
+                    toolBtn.classList.add('active');
+
+                    if (toolBtn.id === 'dibujarCirculoBtn') {
+                        figuraSeleccionada = 'círculo';
+                    } else if (toolBtn.id === 'dibujarCuadradoBtn') {
+                        figuraSeleccionada = 'cuadrado';
+                    } else if (toolBtn.id === 'dibujarTrianguloBtn') {
+                        figuraSeleccionada = 'triángulo';
+                    } else if (toolBtn.id === 'pincelBtn') {
+                        figuraSeleccionada = 'pincel';
+                    }
+                });
+            });
+
+            document.addEventListener('mousedown', function (event) {
+                if (!dibujandoFigura) {
+                    pincelActivo = true;
+                    lastX = event.clientX - canvas.getBoundingClientRect().left;
+                    lastY = event.clientY - canvas.getBoundingClientRect().top;
+
+                    if (figuraSeleccionada !== 'pincel') {
+                        dibujandoFigura = true;
+                        dibujarFiguraEnCoordenadas(event);
+                    }
+                }
+            });
+
+            document.addEventListener('mouseup', function () {
+                pincelActivo = false;
+                dibujandoFigura = false;
+            });
+
+            btnGuardar.addEventListener('click', function () {
+                var dataURL = canvas.toDataURL('image/png');
+                var link = document.createElement('a');
+                link.href = dataURL;
+                link.download = 'mi_dibujo.png';
+                link.click();
+            });
+
+            btnBorrarTodo.addEventListener('click', function () {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+
+            canvas.addEventListener('mousemove', function (event) {
+                if (pincelActivo) {
+                    dibujarPincel(event);
+                } else if (dibujandoFigura) {
+                    dibujarFiguraEnCoordenadas(event);
+                }
+            });
+
+            colorBtns.forEach(function (colorBtn) {
+                colorBtn.addEventListener('click', function () {
+                    colorSeleccionado = colorBtn.getAttribute('data-color');
+
+                    colorBtns.forEach(function (btn) {
+                        btn.classList.remove('selected');
+                    });
+
+                    colorBtn.classList.add('selected');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
